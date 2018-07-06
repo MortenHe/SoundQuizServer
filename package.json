@@ -1,0 +1,8 @@
+{
+  "name": "sound-game-server",
+  "version": "1.0.0",
+  "description": "socket.io server",
+  "dependencies": {
+    "ws": "^5.2.0"
+  }
+}
