@@ -27,7 +27,7 @@ var currentQuestion = "";
 var waitingForAnswer = false;
 
 //"Welches Spiel moechtest du spielen?"
-playSound("main/which-game");
+playSound("which-game");
 
 //Wenn sich ein WebSocket mit dem WebSocketServer verbindet
 wss.on('connection', function connection(ws) {
@@ -52,6 +52,7 @@ wss.on('connection', function connection(ws) {
 
             //Infos kommen per RFID-Karten
             case "send-card-data":
+                console.log(value);
 
                 //Kartenwerte auslesen
                 let cardData = JSON.parse(value);
@@ -78,7 +79,7 @@ wss.on('connection', function connection(ws) {
                             console.log("waiting for game select");
 
                             //Aufforderung ein Spiel auszuwaehlen
-                            playSound("main/select-game-first");
+                            playSound("select-game-first");
                         }
 
                         //Es laeuft schon ein Spiel
@@ -101,10 +102,10 @@ wss.on('connection', function connection(ws) {
                                     });
 
                                     //allgemein: "Richtige Antwort"
-                                    playSound("main/correct-answer");
+                                    playSound("answer-correct");
 
                                     //Speziell: "So bellt ein Hund", "So sieht der Buchstabe L aus"
-                                    playSound(game + "/" + currentQuestion + "-name");
+                                    playSound(currentGame + "/" + currentQuestion + "-name");
 
                                     //Naechste Frage laden
                                     askQuestion();
@@ -114,14 +115,14 @@ wss.on('connection', function connection(ws) {
                                 else {
                                     console.log("wrong answer");
 
-                                    //Info an WS-Clients, dass Antwort korrekt war
+                                    //Info an WS-Clients, dass Antwort falsch war
                                     messageObjArr.push({
                                         type: "answer-state",
-                                        value: true
+                                        value: false
                                     });
 
                                     //"Leider falsch, probier es noch einmal"
-                                    playSound("main/wrong-answer");
+                                    playSound("answer-wrong");
 
                                     //Frage wiederholen?
                                 }
@@ -137,7 +138,6 @@ wss.on('connection', function connection(ws) {
     });
 
     /*
-
     //WS einmalig bei der Verbindung ueber div. Wert informieren
     let WSConnectObjectArr = [{
         type: "set-volume",
@@ -172,9 +172,16 @@ function sendClientInfo(messageObjArr) {
 
 //Sound abspielen
 function playSound(path) {
+
+    /*
     let soundCommand = "omxplayer " + soundDir + "/" + path + ".mp3";
     console.log(soundCommand);
     execSync(soundCommand);
+    */
+
+    let sound = "mplayer C:/apache24/htdocs/SoundQuizServer/sounds/" + path + ".mp3";
+    console.log(sound);
+    execSync(sound);
 }
 
 //Spiel starten
@@ -184,7 +191,7 @@ function startGame(game) {
     //Wenn das bereits gestartete Spiel gestartet werden soll, Hinweis ausgeben
     if (currentGame === game) {
         console.log("already playing game " + game);
-        playSound("main/already-playing-game");
+        playSound("already-playing-game");
     }
 
     //dieses Spiel starten
@@ -192,10 +199,10 @@ function startGame(game) {
         console.log("play game " + game);
 
         //Allgemein: "Los geht's. Wir spielen jetzt das Spiel..."
-        playSound("main/lets-go");
+        playSound("lets-go");
 
         //Speziell: "Geraeusche erkennen"
-        playSound("main/game-" + game);
+        playSound("game-" + game);
 
         //Aktuelles Spiel merken
         currentGame = game;
@@ -226,10 +233,10 @@ function askQuestion() {
     console.log("next question is " + currentQuestion);
 
     //"Wer macht dieses Geraeusch", "Zeige mir den Buchstaben", "Wer spricht so?"
-    playSound("main/question-prefix-" + game);
+    playSound("question-prefix-" + currentGame);
 
     //Eigentlicher Sound (Katze, Mensch, Buchstabe)
-    playSound(game + "/" + currentQuestion + "-sound");
+    playSound(currentGame + "/" + currentQuestion + "-question");
 
     //Frage wurde gestellt, nun warten wir auf die Antwort
     waitingForAnswer = true;
