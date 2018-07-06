@@ -14,7 +14,7 @@ console.log("read game config");
 const gameConfig = fs.readJsonSync('./game-config.json');
 
 //Verzeichnis wo die Videos liegen
-const soundDir = "/media/soundgame";
+const soundDir = "/media/soundquiz";
 
 //Zu Beginn ist kein Spiel ausgewaehlt
 var currentGame = null;
@@ -101,6 +101,9 @@ wss.on('connection', function connection(ws) {
                                         value: true
                                     });
 
+                                    //Infos an Clients schicken
+                                    sendClientInfo(messageObjArr);
+
                                     //allgemein: "Richtige Antwort"
                                     playSound("answer-correct");
 
@@ -121,6 +124,9 @@ wss.on('connection', function connection(ws) {
                                         value: false
                                     });
 
+                                    //Infos an Clients schicken
+                                    sendClientInfo(messageObjArr);
+
                                     //"Leider falsch, probier es noch einmal"
                                     playSound("answer-wrong");
 
@@ -132,9 +138,6 @@ wss.on('connection', function connection(ws) {
                 }
                 break;
         }
-
-        //Infos an Clients schicken
-        sendClientInfo(messageObjArr);
     });
 
     /*
@@ -173,15 +176,15 @@ function sendClientInfo(messageObjArr) {
 //Sound abspielen
 function playSound(path) {
 
-    /*
-    let soundCommand = "omxplayer " + soundDir + "/" + path + ".mp3";
+
+    let soundCommand = "mplayer " + soundDir + "/" + path + ".mp3";
     console.log(soundCommand);
     execSync(soundCommand);
-    */
 
-    let sound = "mplayer C:/apache24/htdocs/SoundQuizServer/sounds/" + path + ".mp3";
-    console.log(sound);
-    execSync(sound);
+
+    //let sound = "mplayer C:/apache24/htdocs/SoundQuizServer/sounds/" + path + ".mp3";
+    //console.log(sound);
+    //execSync(sound);
 }
 
 //Spiel starten
