@@ -3,14 +3,41 @@ console.log("create websocket server");
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: 8080, clientTracking: true });
 
-//Filesystem und Path Abfragen fuer Playlist
-const fs = require('fs-extra');
+//Mplayer + Wrapper anlegen
+const createPlayer = require('mplayer-wrapper');
+const player = createPlayer();
+
+//Wenn Playlist fertig ist
+player.on('playlist-finish', () => {
+    console.log("playlist finished");
+});
+
+//Wenn bei Track change der Filename geliefert wird
+player.on('filename', (filename) => {
+    console.log(filename);
+
+    if (filename.endsWith("-question.mp3")) {
+
+        //Frage wurde gestellt, nun warten wir auf die Antwort
+        waitingForAnswer = true;
+        console.log("waiting for answer");
+    }
+});
+
+//Wenn sich ein Titel aendert (durch Nutzer oder durch den Player)
+player.on('track-change', () => {
+    console.log("track-change");
+
+    //Neuen Dateinamen liefern
+    player.getProps(['filename']);
+});
 
 //Befehle auf Kommandzeile ausfuehren
 const { execSync } = require('child_process');
 
 //Game-Config-JSON-Objekt aus Datei holen
 console.log("read game config");
+const fs = require('fs-extra');
 const gameConfig = fs.readJsonSync('./game-config.json');
 
 //Verzeichnis wo die Videos liegen
@@ -176,10 +203,12 @@ function sendClientInfo(messageObjArr) {
 //Sound abspielen
 function playSound(path) {
 
+    player.queue(soundDir + "/" + path + ".mp3");
 
-    let soundCommand = "mplayer " + soundDir + "/" + path + ".mp3";
-    console.log(soundCommand);
-    execSync(soundCommand);
+
+    //let soundCommand = "mplayer " + soundDir + "/" + path + ".mp3";
+    //console.log(soundCommand);
+    //execSync(soundCommand);
 
 
     //let sound = "mplayer C:/apache24/htdocs/SoundQuizServer/sounds/" + path + ".mp3";
@@ -240,8 +269,4 @@ function askQuestion() {
 
     //Eigentlicher Sound (Katze, Mensch, Buchstabe)
     playSound(currentGame + "/" + currentQuestion + "-question");
-
-    //Frage wurde gestellt, nun warten wir auf die Antwort
-    waitingForAnswer = true;
-    console.log("waiting for answer");
 }

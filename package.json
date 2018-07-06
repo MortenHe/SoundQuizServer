@@ -4,6 +4,7 @@
   "description": "socket.io server",
   "dependencies": {
     "fs-extra": "^6.0.1",
+    "mplayer-wrapper": "^1.0.0",
     "ws": "^5.2.0"
   }
 }
