@@ -13,14 +13,9 @@ const colors = require('colors');
 //Befehle auf Kommandzeile ausfuehren
 const { execSync } = require('child_process');
 
-//Lautstaerke auf 100% setzen
-//let changeVolumeCommand = "sudo amixer sset PCM 100% -M";
-//console.log(changeVolumeCommand)
-//execSync(changeVolumeCommand);
-
 //System-Lautstaerke zu Beginn auf 100% setzen
 const vol = require('vol');
-vol.set(.12).then(() => {
+vol.set(1).then(() => {
     console.log('set system volume to 100%'.green);
 });
 
