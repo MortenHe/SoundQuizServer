@@ -7,6 +7,11 @@ const wss = new WebSocket.Server({ port: 8080, clientTracking: true });
 const createPlayer = require('mplayer-wrapper');
 const player = createPlayer();
 
+//Lautstaerke auf 100% setzen
+let changeVolumeCommand = "sudo amixer sset PCM 100% -M";
+console.log(changeVolumeCommand)
+execSync(changeVolumeCommand);
+
 //Wenn Playlist fertig ist
 player.on('playlist-finish', () => {
     console.log("playlist finished");
@@ -42,6 +47,7 @@ const gameConfig = fs.readJsonSync('./game-config.json');
 
 //Verzeichnis wo die Videos liegen
 const soundDir = "/media/soundquiz";
+//const soundDir = "C:/Apache24/htdocs/SoundQuizServer/sounds";
 
 //Zu Beginn ist kein Spiel ausgewaehlt
 var currentGame = null;
@@ -89,9 +95,23 @@ wss.on('connection', function connection(ws) {
                 //Welcher Typ von Karte ist es (game-select vs. answer)
                 switch (cardDataType) {
 
+                    //Spiel beenden
+                    case "shutdown":
+                        console.debug("stop game and shutdown");
+
+                        //Verabschiedungssound
+                        playSound("shutdown", true);
+
+                        //Pi herunterfahren
+                        //execSync("shutdown -h now");
+                        break;
+
                     //Spielauswahl
                     case "game-select":
                         console.log("user sends game select event");
+
+                        //keine Antworten akzeptieren
+                        waitingForAnswer = false;
 
                         //Spiel starten
                         startGame(cardDataValue);
@@ -106,7 +126,7 @@ wss.on('connection', function connection(ws) {
                             console.log("waiting for game select");
 
                             //Aufforderung ein Spiel auszuwaehlen
-                            playSound("select-game-first");
+                            playSound("select-game-first", true);
                         }
 
                         //Es laeuft schon ein Spiel
@@ -132,7 +152,7 @@ wss.on('connection', function connection(ws) {
                                     sendClientInfo(messageObjArr);
 
                                     //allgemein: "Richtige Antwort"
-                                    playSound("answer-correct");
+                                    playSound("answer-correct", true);
 
                                     //Speziell: "So bellt ein Hund", "So sieht der Buchstabe L aus"
                                     playSound(currentGame + "/" + currentQuestion + "-name");
@@ -159,6 +179,11 @@ wss.on('connection', function connection(ws) {
 
                                     //Frage wiederholen?
                                 }
+                            }
+
+                            //Antworten noch nicht freigeschaltet
+                            else {
+                                console.log("please wait");
                             }
                         }
                         break;
@@ -201,19 +226,20 @@ function sendClientInfo(messageObjArr) {
 }
 
 //Sound abspielen
-function playSound(path) {
+function playSound(path, interrupt = false) {
 
-    player.queue(soundDir + "/" + path + ".mp3");
+    //Pfad zu Datei
+    let filePath = soundDir + "/" + path + ".mp3";
 
+    //Wenn Sound eingereiht werden soll
+    if (!interrupt) {
+        player.queue(filePath);
+    }
 
-    //let soundCommand = "mplayer " + soundDir + "/" + path + ".mp3";
-    //console.log(soundCommand);
-    //execSync(soundCommand);
-
-
-    //let sound = "mplayer C:/apache24/htdocs/SoundQuizServer/sounds/" + path + ".mp3";
-    //console.log(sound);
-    //execSync(sound);
+    //Sound soll direkt wiedergegeben werden (z.B. Spielwechsel oder Shutdown)
+    else {
+        player.play(filePath);
+    }
 }
 
 //Spiel starten
@@ -223,7 +249,7 @@ function startGame(game) {
     //Wenn das bereits gestartete Spiel gestartet werden soll, Hinweis ausgeben
     if (currentGame === game) {
         console.log("already playing game " + game);
-        playSound("already-playing-game");
+        playSound("already-playing-game", true);
     }
 
     //dieses Spiel starten
@@ -231,7 +257,7 @@ function startGame(game) {
         console.log("play game " + game);
 
         //Allgemein: "Los geht's. Wir spielen jetzt das Spiel..."
-        playSound("lets-go");
+        playSound("lets-go", true);
 
         //Speziell: "Geraeusche erkennen"
         playSound("game-" + game);
