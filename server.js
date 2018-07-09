@@ -131,7 +131,7 @@ wss.on('connection', function connection(ws) {
                             playSound("shutdown", true);
 
                             //Pi herunterfahren
-                            //execSync("shutdown -h now");
+                            execSync("sleep 5 && shutdown -h now");
                             break;
 
                         //Spielauswahl
