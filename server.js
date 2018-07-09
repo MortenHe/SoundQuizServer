@@ -14,9 +14,15 @@ const colors = require('colors');
 const { execSync } = require('child_process');
 
 //Lautstaerke auf 100% setzen
-let changeVolumeCommand = "sudo amixer sset PCM 100% -M";
-console.log(changeVolumeCommand)
+//let changeVolumeCommand = "sudo amixer sset PCM 100% -M";
+//console.log(changeVolumeCommand)
 //execSync(changeVolumeCommand);
+
+//System-Lautstaerke zu Beginn auf 100% setzen
+const vol = require('vol');
+vol.set(.12).then(() => {
+    console.log('set system volume to 100%'.green);
+});
 
 //Wenn bei Track change der Filename geliefert wird
 player.on('filename', (filename) => {
