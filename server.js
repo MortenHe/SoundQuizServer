@@ -13,6 +13,9 @@ const colors = require('colors');
 //Befehle auf Kommandzeile ausfuehren
 const { execSync } = require('child_process');
 
+//Array random
+const shuffle = require('shuffle-array')
+
 //Lautstaerke zu Beginn auf 100% setzen
 let initialVolumeCommand = "sudo amixer sset PCM 100% -M";
 console.log(initialVolumeCommand)
@@ -83,7 +86,7 @@ var acceptingCard = false;
 
 //"Welches Spiel moechtest du spielen?"
 playSound("which-game");
-console.log("select game".green);
+console.log("waiting for game select".green);
 
 //Wenn sich ein WebSocket mit dem WebSocketServer verbindet
 wss.on('connection', function connection(ws) {
@@ -94,13 +97,12 @@ wss.on('connection', function connection(ws) {
 
         //Nachricht kommt als String -> in JSON Objekt konvertieren
         var obj = JSON.parse(message);
-        console.log(obj)
 
         //Werte auslesen
         let type = obj.type;
         let value = obj.value;
 
-        //Array von MessageObjekte erstellen, die an WS gesendet werden
+        //Array von MessageObjekten erstellen, die an WS gesendet werden
         let messageObjArr = [];
 
         //Pro Typ gewisse Aktionen durchfuehren
@@ -111,14 +113,14 @@ wss.on('connection', function connection(ws) {
 
                 //Wenn gerade Karten akzeptiert werden oder noch kein Spiel geladen wurde
                 if (acceptingCard || currentGame === null) {
-                    console.log(value);
+                    console.log(value.blue);
 
                     //Kartenwerte auslesen
                     let cardData = JSON.parse(value);
                     let cardDataType = cardData.type;
                     let cardDataValue = cardData.value;
 
-                    //Welcher Typ von Karte ist es (game-select vs. answer)
+                    //Welcher Typ von Karte ist es (game-select, answer, shutdown)
                     switch (cardDataType) {
 
                         //Spiel beenden
@@ -131,7 +133,7 @@ wss.on('connection', function connection(ws) {
                             playSound("shutdown", true);
 
                             //Pi herunterfahren
-                            execSync("sleep 5 && shutdown -h now");
+                            execSync("sleep 3 && shutdown -h now");
                             break;
 
                         //Spielauswahl
@@ -280,7 +282,10 @@ function startGame(game) {
 
     //dieses Spiel starten
     else {
-        console.log("play game " + game.green);
+
+        //Aktuelles Spiel merken
+        currentGame = game;
+        console.log("play game " + currentGame.green);
 
         //Karten erst wieder akzeptieren nachdem Frage gestellt wurde
         console.log("stop accepting cards".red);
@@ -290,14 +295,7 @@ function startGame(game) {
         playSound("lets-go", true);
 
         //Speziell: "Geraeusche erkennen"
-        playSound("game-" + game);
-
-        //Aktuelles Spiel merken
-        currentGame = game;
-
-        //Fragen dieses Spiels aus Config laden
-        currentQuestions = gameConfig[game];
-        console.log("available questions in game " + currentGame + " " + JSON.stringify(currentQuestions).yellow);
+        playSound("game-" + currentGame);
 
         //Frage stellen
         askQuestion();
@@ -307,20 +305,26 @@ function startGame(game) {
 //Eine Frage stellen
 function askQuestion(repeat = false) {
 
+    //Wenn eine neue Frage gestellt werden soll
     if (!repeat) {
         console.log("pick next random question".yellow);
 
-        //neue Frage erstellen
-        let question;
+        //Wenn keine Fragen (mehr) zu spielen sind
+        if (currentQuestions.length === 0) {
 
-        //Zufaelligen Wert ausaehlen und sicherstellen, dass nicht 2 Mal die gleiche Frage kommt
-        do {
-            question = currentQuestions[Math.floor(Math.random() * currentQuestions.length)];
+            //alle Fragen dieses Spiels aus Config laden -> slice damit Kopie statt Referenz erstellt wird
+            currentQuestions = gameConfig[currentGame].slice();
+            console.log("available questions in game " + currentGame + ": " + JSON.stringify(currentQuestions).yellow);
+
+            //Zufaellige Reihenfolge erzeugen
+            shuffle(currentQuestions);
+            console.log("questions will be played in this order: " + JSON.stringify(currentQuestions).yellow);
         }
-        while (question === currentQuestion)
 
-        //neue Frage merken
-        currentQuestion = question;
+        //1. Frage aus Array holen und aus Array entfernen
+        currentQuestion = currentQuestions.shift();
+        console.log("next question is " + currentQuestion.green);
+        console.log("remaining questions " + JSON.stringify(currentQuestions).yellow);
 
         //"Wer macht dieses Geraeusch", "Zeige mir den Buchstaben", "Wer spricht so?"
         playSound("question-prefix-" + currentGame);
@@ -328,10 +332,9 @@ function askQuestion(repeat = false) {
 
     //gleiche Frage wird wiederholt
     else {
-        console.log("repeat question".yellow)
+        console.log("repeat question " + currentQuestion.green)
     }
 
     //Eigentlicher Sound (Katze, Mensch, Buchstabe)
-    console.log("next question is " + currentQuestion.green);
     playSound(currentGame + "/" + currentQuestion + "-question");
 }
