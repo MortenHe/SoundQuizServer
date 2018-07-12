@@ -291,6 +291,10 @@ function startGame(game) {
         console.log("stop accepting cards".red);
         acceptingCard = false;
 
+        //Liste der Fragen und aktuelle Frage wieder zuruecksetzen
+        currentQuestions = [];
+        currentQuestion = null;
+
         //Allgemein: "Los geht's. Wir spielen jetzt das Spiel..."
         playSound("lets-go", true);
 
