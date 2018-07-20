@@ -144,8 +144,8 @@ wss.on('connection', function connection(ws) {
                             startGame(cardDataValue);
                             break;
 
-                        //Bei einer Antwort
-                        case "answer":
+                        //Bei einer Antwort oder der Joker-Karte
+                        case "answer": case "joker":
                             console.log("user sends answer event".green);
 
                             //Wenn noch kein Spiel ausgewaehlt wurde
@@ -159,8 +159,8 @@ wss.on('connection', function connection(ws) {
                             //Es laeuft schon ein Spiel
                             else {
 
-                                //Wenn die Antwort korrekt ist
-                                if (cardDataValue === currentQuestion) {
+                                //Wenn die Antwort korrekt ist oder der Joker gespielt wurde
+                                if (cardDataValue === currentQuestion || cardDataType === "joker") {
                                     console.log("correct answer".green);
 
                                     //Weitere Kartenaufrufe verhindern
