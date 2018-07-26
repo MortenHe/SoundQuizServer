@@ -144,8 +144,8 @@ wss.on('connection', function connection(ws) {
                             startGame(cardDataValue);
                             break;
 
-                        //Bei einer Antwort oder der Joker-Karte
-                        case "answer": case "joker":
+                        //Bei einer Antwort, der Joker-Karte oder der Repeat-Karte
+                        case "answer": case "joker": case "repeat":
                             console.log("user sends answer event".green);
 
                             //Wenn noch kein Spiel ausgewaehlt wurde
@@ -184,6 +184,21 @@ wss.on('connection', function connection(ws) {
 
                                     //Naechste Frage laden
                                     askQuestion();
+                                }
+
+                                //Frage soll wiederholt werden
+                                else if (cardDataType === "repeat") {
+                                    console.log("repeat question".yellow);
+
+                                    //Weitere Kartenaufrufe verhindern
+                                    console.log("stop accepting cards".red);
+                                    acceptingCard = false;
+
+                                    //"Hoer es dir noch einmal an"
+                                    playSound("repeat-question");
+
+                                    //gleiche Frage noch einmal abspielen
+                                    askQuestion(true);
                                 }
 
                                 //Antwort war falsch
