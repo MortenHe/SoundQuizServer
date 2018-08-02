@@ -3,6 +3,9 @@ console.log("create websocket server");
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: 8080, clientTracking: true });
 
+//z.B. Dateiname ohne Endung
+const path = require('path');
+
 //Mplayer + Wrapper anlegen
 const createPlayer = require('mplayer-wrapper');
 const player = createPlayer();
@@ -73,6 +76,20 @@ const runMode = process.argv[2] ? process.argv[2] : "pi";
 //Verzeichnis wo die Fragenfiles liegen
 const soundDir = runMode === "win" ? "C:/Apache24/htdocs/SoundQuizServer/sounds" : "/media/soundquiz";
 console.log("using sound dir " + soundDir.green);
+
+//Liste der Jingles laden
+var jingles = fs.readdirSync(soundDir + "/jingles");
+console.log("available jingles: " + JSON.stringify(jingles).green);
+
+//Jingles random
+shuffle(jingles);
+console.log("jingle order: " + JSON.stringify(jingles).green);
+
+//Anzahl der richtigen Antworten zaehlen
+var correctAnswerCounter = 0;
+
+//Schritt fuer Schritt durch das Jingle-Array gehen
+var jingleCounter = 0;
 
 //Zu Beginn ist kein Spiel ausgewaehlt
 var currentGame = null;
@@ -163,6 +180,10 @@ wss.on('connection', function connection(ws) {
                                 if (cardDataValue === currentQuestion || cardDataType === "joker") {
                                     console.log("correct answer".green);
 
+                                    //Anzahl der richtigen Antworten erhoehen
+                                    correctAnswerCounter++;
+                                    console.log(correctAnswerCounter + " correct answers");
+
                                     //Weitere Kartenaufrufe verhindern
                                     console.log("stop accepting cards".red);
                                     acceptingCard = false;
@@ -179,7 +200,21 @@ wss.on('connection', function connection(ws) {
                                     //allgemein: "Richtige Antwort"
                                     playSound("answer-correct", true);
 
-                                    //Speziell: "So bellt ein Hund", "So sieht der Buchstabe L aus"
+                                    //Bei jeder 3. richtigen Antwort
+                                    if (correctAnswerCounter % 3 === 0) {
+
+                                        //Jingle-Sound ermitteln
+                                        let jingleSound = jingles[jingleCounter];
+                                        console.log("play jingle " + jingleSound);
+
+                                        //Jingle-Sound abspielen
+                                        playSound("jingles/" + path.basename(jingleSound, '.mp3'));
+
+                                        //zum naechsten Jingle-Sound gehen
+                                        jingleCounter = (jingleCounter + 1) % jingles.length
+                                    }
+
+                                    //Speziell: "Das war ein Hund", "So sieht der Buchstabe L aus"
                                     playSound(currentGame + "/" + currentQuestion + "-name");
 
                                     //Naechste Frage laden
@@ -195,7 +230,7 @@ wss.on('connection', function connection(ws) {
                                     acceptingCard = false;
 
                                     //"Hoer es dir noch einmal an"
-                                    playSound("repeat-question");
+                                    playSound("repeat", true);
 
                                     //gleiche Frage noch einmal abspielen
                                     askQuestion(true);
@@ -219,7 +254,7 @@ wss.on('connection', function connection(ws) {
                                     sendClientInfo(messageObjArr);
 
                                     //"Leider falsch, probier es noch einmal"
-                                    playSound("answer-wrong");
+                                    playSound("answer-wrong", true);
 
                                     //gleiche Frage noch einmal abspielen
                                     askQuestion(true);
