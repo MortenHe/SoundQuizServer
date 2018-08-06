@@ -200,8 +200,11 @@ wss.on('connection', function connection(ws) {
                                     //allgemein: "Richtige Antwort"
                                     playSound("answer-correct", true);
 
-                                    //Bei jeder 3. richtigen Antwort
-                                    if (correctAnswerCounter % 3 === 0) {
+                                    //Speziell: "Das war ein Hund", "So sieht der Buchstabe L aus"
+                                    playSound(currentGame + "/" + currentQuestion + "-name");
+
+                                    //Bei jeder 2. richtigen Antwort
+                                    if (correctAnswerCounter % 2 === 0) {
 
                                         //Jingle-Sound ermitteln
                                         let jingleSound = jingles[jingleCounter];
@@ -213,9 +216,6 @@ wss.on('connection', function connection(ws) {
                                         //zum naechsten Jingle-Sound gehen
                                         jingleCounter = (jingleCounter + 1) % jingles.length
                                     }
-
-                                    //Speziell: "Das war ein Hund", "So sieht der Buchstabe L aus"
-                                    playSound(currentGame + "/" + currentQuestion + "-name");
 
                                     //Naechste Frage laden
                                     askQuestion();
