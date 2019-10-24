@@ -36,10 +36,8 @@ player.on('filename', (filename) => {
     }
 });
 
-//Wenn sich ein Titel aendert (durch Nutzer oder durch den Player)
+//Wenn sich ein Titel aendert (durch Nutzer oder durch den Player), neuen Dateinamen liefern
 player.on('track-change', () => {
-
-    //Neuen Dateinamen liefern
     player.getProps(['filename']);
 });
 
@@ -146,18 +144,14 @@ wss.on('connection', function connection(ws) {
                             console.log("stop accepting cards".red);
                             acceptingCard = false;
 
-                            //Verabschiedungssound
+                            //Verabschiedungssound und Pi runterfahren
                             playSound("shutdown", true);
-
-                            //Pi herunterfahren
                             execSync("sleep 5 && shutdown -h now");
                             break;
 
                         //Spielauswahl
                         case "game-select":
                             console.log("user sends game select event".green);
-
-                            //Spiel starten
                             startGame(cardDataValue);
                             break;
 
@@ -165,11 +159,9 @@ wss.on('connection', function connection(ws) {
                         case "answer": case "joker": case "repeat":
                             console.log("user sends answer event".green);
 
-                            //Wenn noch kein Spiel ausgewaehlt wurde
+                            //Wenn noch kein Spiel ausgewaehlt wurde, Aufforderung ein Spiel auszuwaehlen
                             if (currentGame === null) {
                                 console.log("waiting for game select".yellow);
-
-                                //Aufforderung ein Spiel auszuwaehlen
                                 playSound("select-game-first", true);
                             }
 

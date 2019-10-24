@@ -1,0 +1,1 @@
+- Sounds aus C:\Users\Martin\Desktop\Google Drive\_work\Raspberry Pi\soundquiz-sounds unter /media/soundquiz ablegen
