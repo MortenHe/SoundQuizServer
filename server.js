@@ -1,7 +1,16 @@
 //WebSocketServer anlegen und starten
 console.log("create websocket server");
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: 8080, clientTracking: true });
+const port = 7070;
+const wss = new WebSocket.Server({ port: port, clientTracking: true });
+const { spawn } = require('child_process');
+
+//USB RFID-Reader starten
+console.log("Use USB RFID Reader");
+const rfid_usb = spawn("node", [__dirname + "/../WSRFID/rfid.js", port]);
+rfid_usb.stdout.on('data', (data) => {
+    console.log("rfid event: " + data);
+});
 
 //z.B. Dateiname ohne Endung
 const path = require('path');
@@ -44,16 +53,16 @@ player.on('track-change', () => {
 //Game-Config-JSON-Objekt aus Datei holen, um daraus passende Datenstruktur zu bauen
 const fs = require('fs-extra');
 console.log("read game config".green);
-const gameConfigJSON = fs.readJsonSync('../SoundQuizGPIO/config.json');
+const gameConfigJSON = fs.readJsonSync('../WSRFID/config_cards.json');
 
 //Datenstruktur fuer Server (zufaellige Fragen laden)
 var gameConfig = {};
 
 //Ueber Karten gehen
-for (let card in gameConfigJSON) {
+for (let card in gameConfigJSON[port]) {
 
     //Karteninfo laden
-    let cardInfo = gameConfigJSON[card];
+    let cardInfo = gameConfigJSON[port][card];
 
     //Wenn es eine Antwortkarte ist
     if (cardInfo["type"] === "answer") {
