@@ -1,0 +1,5 @@
+{
+    "audioDir": "/media/usb_audio/soundquiz",
+    "audioOutput": "Digital|PCM|Master|Headphone,1",
+    "countdownTime": 300
+}

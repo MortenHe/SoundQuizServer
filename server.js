@@ -3,35 +3,34 @@ console.log("create websocket server");
 const WebSocket = require('ws');
 const port = 7070;
 const wss = new WebSocket.Server({ port: port, clientTracking: true });
-const { spawn } = require('child_process');
 
 //USB RFID-Reader starten
 console.log("Use USB RFID Reader");
+const { spawn } = require('child_process');
 const rfid_usb = spawn("node", [__dirname + "/../WSRFID/rfid.js", port]);
 rfid_usb.stdout.on('data', (data) => {
     console.log("rfid event: " + data);
 });
 
-//z.B. Dateiname ohne Endung
-const path = require('path');
-
 //Mplayer + Wrapper anlegen
 const createPlayer = require('mplayer-wrapper');
 const player = createPlayer();
 
-//Farbiges Logging
+//Utils
 const colors = require('colors');
-
-//Befehle auf Kommandzeile ausfuehren
+const fs = require('fs-extra');
+const path = require('path');
 const { execSync } = require('child_process');
+const shuffle = require('shuffle-array');
 
-//Array random
-const shuffle = require('shuffle-array')
+//Config laden
+const configFile = fs.readJsonSync(__dirname + '/config.json');
+console.log("using sound dir " + configFile.audioDir.green);
 
 //Lautstaerke zu Beginn auf 100% setzen
-let initialVolumeCommand = "sudo amixer sset PCM 100% -M";
+const initialVolumeCommand = "sudo amixer sset " + configFile["audioOutput"] + " 100% -M";
 console.log(initialVolumeCommand)
-execSync(initialVolumeCommand);
+//execSync(initialVolumeCommand);
 
 //Wenn bei Track change der Filename geliefert wird
 player.on('filename', (filename) => {
@@ -39,19 +38,16 @@ player.on('filename', (filename) => {
     //Ab dem Zeitpunkt wenn die Frage gestellt wird (z.B. Tiergeraeusch abgespielt), werden antworten akzeptiert
     if (filename.endsWith("-question.mp3")) {
         console.log("start accepting cards".green);
-
-        //Frage wurde gestellt, nun warten wir auf die Antwort
         acceptingCard = true;
     }
 });
 
-//Wenn sich ein Titel aendert (durch Nutzer oder durch den Player), neuen Dateinamen liefern
+//Wenn sich ein Titel aendert (durch Nutzer oder durch den Player), neuen Dateinamen liefern, muss bleiben damit Trigger gestartet wird?
 player.on('track-change', () => {
     player.getProps(['filename']);
 });
 
 //Game-Config-JSON-Objekt aus Datei holen, um daraus passende Datenstruktur zu bauen
-const fs = require('fs-extra');
 console.log("read game config".green);
 const gameConfigJSON = fs.readJsonSync('../WSRFID/config_cards.json');
 
@@ -77,15 +73,8 @@ for (let card in gameConfigJSON[port]) {
 }
 console.log("available games and questions: " + JSON.stringify(gameConfig).green);
 
-//Wo wird das Skript betrieben win vs. pi
-const runMode = process.argv[2] ? process.argv[2] : "pi";
-
-//Verzeichnis wo die Fragenfiles liegen
-const soundDir = runMode === "win" ? "C:/Apache24/htdocs/SoundQuizServer/sounds" : "/media/soundquiz";
-console.log("using sound dir " + soundDir.green);
-
 //Liste der Jingles laden
-var jingles = fs.readdirSync(soundDir + "/jingles");
+var jingles = fs.readdirSync(configFile.audioDir + "/jingles");
 console.log("available jingles: " + JSON.stringify(jingles).green);
 
 //Jingles random
@@ -121,8 +110,6 @@ wss.on('connection', function connection(ws) {
 
         //Nachricht kommt als String -> in JSON Objekt konvertieren
         var obj = JSON.parse(message);
-
-        //Werte auslesen
         let type = obj.type;
         let value = obj.value;
 
@@ -308,7 +295,7 @@ function sendClientInfo(messageObjArr) {
 function playSound(path, interrupt = false) {
 
     //Pfad zu Datei
-    let filePath = soundDir + "/" + path + ".mp3";
+    let filePath = configFile.audioDir + "/" + path + ".mp3";
 
     //Wenn Sound eingereiht werden soll
     if (!interrupt) {
