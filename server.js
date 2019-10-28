@@ -3,10 +3,17 @@ console.log("create websocket server");
 const WebSocket = require('ws');
 const port = 7070;
 const wss = new WebSocket.Server({ port: port, clientTracking: true });
+const { spawn } = require('child_process');
+
+//GPIO Buttons starten
+console.log("Use GPIO Buttons");
+const buttons_gpio = spawn("node", [__dirname + "/../WSGpioButtons/button.js", port]);
+buttons_gpio.stdout.on("data", (data) => {
+    console.log("button event: " + data);
+});
 
 //USB RFID-Reader starten
 console.log("Use USB RFID Reader");
-const { spawn } = require('child_process');
 const rfid_usb = spawn("node", [__dirname + "/../WSRFID/rfid.js", port]);
 rfid_usb.stdout.on('data', (data) => {
     console.log("rfid event: " + data);
@@ -49,16 +56,16 @@ player.on('track-change', () => {
 
 //Game-Config-JSON-Objekt aus Datei holen, um daraus passende Datenstruktur zu bauen
 console.log("read game config".green);
-const gameConfigJSON = fs.readJsonSync('../WSRFID/config_cards.json');
+const gameConfigJSON = fs.readJsonSync(__dirname + '/../WSRFID/config_cards_7070.json');
 
 //Datenstruktur fuer Server (zufaellige Fragen laden)
 var gameConfig = {};
 
 //Ueber Karten gehen
-for (let card in gameConfigJSON[port]) {
+for (let card in gameConfigJSON) {
 
     //Karteninfo laden
-    let cardInfo = gameConfigJSON[port][card];
+    let cardInfo = gameConfigJSON[card];
 
     //Wenn es eine Antwortkarte ist
     if (cardInfo["type"] === "answer") {
@@ -110,6 +117,7 @@ wss.on('connection', function connection(ws) {
 
         //Nachricht kommt als String -> in JSON Objekt konvertieren
         var obj = JSON.parse(message);
+        console.log(obj)
         let type = obj.type;
         let value = obj.value;
 
@@ -125,9 +133,11 @@ wss.on('connection', function connection(ws) {
                 //Wenn gerade Karten akzeptiert werden oder noch kein Spiel geladen wurde
                 if (acceptingCard || currentGame === null) {
                     console.log(value.blue);
+                    console.log("value is " + value);
 
                     //Kartenwerte auslesen
                     let cardData = JSON.parse(value);
+                    console.log(cardData);
                     let cardDataType = cardData.type;
                     let cardDataValue = cardData.value;
 
