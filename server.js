@@ -1,3 +1,6 @@
+//Soll bereits ein Spiel zu Beginn geladen werden?
+let gameSelect = process.argv[2];
+
 //WebSocketServer anlegen und starten
 console.log("create websocket server");
 const WebSocket = require('ws');
@@ -104,9 +107,16 @@ var currentQuestion = null;
 //Werden gerade Karten ausgewertet?
 var acceptingCard = false;
 
-//"Welches Spiel moechtest du spielen?"
-playSound("which-game");
-console.log("waiting for game select".green);
+//Wenn bereits ein Spielmodus uebergeben wurde, dieses Spiel starten
+if (gameSelect) {
+    startGame(gameSelect);
+}
+
+//Ansonsten fragen: "Welches Spiel moechtest du spielen?"
+else {
+    playSound("which-game");
+    console.log("waiting for game select".green);
+}
 
 //Wenn sich ein WebSocket mit dem WebSocketServer verbindet
 wss.on('connection', function connection(ws) {
@@ -136,10 +146,8 @@ wss.on('connection', function connection(ws) {
                     console.log("value is " + value);
 
                     //Kartenwerte auslesen
-                    let cardData = JSON.parse(value);
-                    console.log(cardData);
-                    let cardDataType = cardData.type;
-                    let cardDataValue = cardData.value;
+                    let cardDataType = value.type;
+                    let cardDataValue = value.value;
 
                     //Welcher Typ von Karte ist es (game-select, answer, shutdown)
                     switch (cardDataType) {
@@ -159,6 +167,11 @@ wss.on('connection', function connection(ws) {
                         case "game-select":
                             console.log("user sends game select event".green);
                             startGame(cardDataValue);
+                            break;
+
+                        //Jingle abspielen
+                        case "jingle":
+                            playJingle(true);
                             break;
 
                         //Bei einer Antwort, der Joker-Karte oder der Repeat-Karte
@@ -201,18 +214,9 @@ wss.on('connection', function connection(ws) {
                                     //Speziell: "Das war ein Hund", "So sieht der Buchstabe L aus"
                                     playSound(currentGame + "/" + currentQuestion + "-name");
 
-                                    //Bei jeder 2. richtigen Antwort
+                                    //Bei jeder 2. richtigen Antwort Jingle abspielen
                                     if (correctAnswerCounter % 2 === 0) {
-
-                                        //Jingle-Sound ermitteln
-                                        let jingleSound = jingles[jingleCounter];
-                                        console.log("play jingle " + jingleSound);
-
-                                        //Jingle-Sound abspielen
-                                        playSound("jingles/" + path.basename(jingleSound, '.mp3'));
-
-                                        //zum naechsten Jingle-Sound gehen
-                                        jingleCounter = (jingleCounter + 1) % jingles.length
+                                        playJingle();
                                     }
 
                                     //Naechste Frage laden
@@ -268,21 +272,6 @@ wss.on('connection', function connection(ws) {
                 break;
         }
     });
-
-    /*
-    //WS einmalig bei der Verbindung ueber div. Wert informieren
-    let WSConnectObjectArr = [{
-        type: "set-volume",
-        value: currentVolume
-    }];
-
-    //Ueber Objekte gehen, die an WS geschickt werden
-    WSConnectObjectArr.forEach(messageObj => {
-
-        //Info an WS schicken
-        ws.send(JSON.stringify(messageObj));
-    });
-    */
 });
 
 //Infos ans WS-Clients schicken
@@ -299,6 +288,20 @@ function sendClientInfo(messageObjArr) {
             catch (e) { }
         }
     });
+}
+
+//Jingle abspielen
+function playJingle(interrupt = false) {
+
+    //Jingle-Sound ermitteln
+    let jingleSound = jingles[jingleCounter];
+    console.log("play jingle " + jingleSound);
+
+    //Jingle-Sound abspielen
+    playSound("jingles/" + path.basename(jingleSound, '.mp3'), interrupt);
+
+    //zum naechsten Jingle-Sound gehen
+    jingleCounter = (jingleCounter + 1) % jingles.length;
 }
 
 //Sound abspielen
