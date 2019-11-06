@@ -40,7 +40,10 @@ console.log("using sound dir " + configFile.audioDir.green);
 //Lautstaerke zu Beginn auf 100% setzen
 const initialVolumeCommand = "sudo amixer sset " + configFile["audioOutput"] + " 100% -M";
 console.log(initialVolumeCommand)
-//execSync(initialVolumeCommand);
+execSync(initialVolumeCommand);
+
+//Countdown starten
+startCountdown();
 
 //Wenn bei Track change der Filename geliefert wird
 player.on('filename', (filename) => {
@@ -125,6 +128,9 @@ wss.on('connection', function connection(ws) {
     //Wenn WSS eine Nachricht von WS empfaengt
     ws.on('message', function incoming(message) {
 
+        //Countdown zuruecksetzen
+        resetCountdown();
+
         //Nachricht kommt als String -> in JSON Objekt konvertieren
         var obj = JSON.parse(message);
         console.log(obj)
@@ -137,7 +143,7 @@ wss.on('connection', function connection(ws) {
         //Pro Typ gewisse Aktionen durchfuehren
         switch (type) {
 
-            //Infos kommen per RFID-Karten
+            //Infos kommen per RFID-Karten oder Button
             case "send-card-data":
 
                 //Wenn gerade Karten akzeptiert werden oder noch kein Spiel geladen wurde
@@ -152,15 +158,14 @@ wss.on('connection', function connection(ws) {
                     //Welcher Typ von Karte ist es (game-select, answer, shutdown)
                     switch (cardDataType) {
 
-                        //Spiel beenden
+                        //Server herunterfahren
                         case "shutdown":
                             console.log("user send stop game and shutdown event".green);
                             console.log("stop accepting cards".red);
                             acceptingCard = false;
 
                             //Verabschiedungssound und Pi runterfahren
-                            playSound("shutdown", true);
-                            execSync("sleep 5 && shutdown -h now");
+                            shutdown();
                             break;
 
                         //Spielauswahl
@@ -290,20 +295,6 @@ function sendClientInfo(messageObjArr) {
     });
 }
 
-//Jingle abspielen
-function playJingle(interrupt = false) {
-
-    //Jingle-Sound ermitteln
-    let jingleSound = jingles[jingleCounter];
-    console.log("play jingle " + jingleSound);
-
-    //Jingle-Sound abspielen
-    playSound("jingles/" + path.basename(jingleSound, '.mp3'), interrupt);
-
-    //zum naechsten Jingle-Sound gehen
-    jingleCounter = (jingleCounter + 1) % jingles.length;
-}
-
 //Sound abspielen
 function playSound(path, interrupt = false) {
 
@@ -392,4 +383,55 @@ function askQuestion(repeat = false) {
 
     //Eigentlicher Sound (Katze, Mensch, Buchstabe)
     playSound(currentGame + "/" + currentQuestion + "-question");
+}
+
+//Jingle abspielen
+function playJingle(interrupt = false) {
+
+    //Jingle-Sound ermitteln
+    let jingleSound = jingles[jingleCounter];
+    console.log("play jingle " + jingleSound);
+
+    //Jingle-Sound abspielen
+    playSound("jingles/" + path.basename(jingleSound, '.mp3'), interrupt);
+
+    //zum naechsten Jingle-Sound gehen
+    jingleCounter = (jingleCounter + 1) % jingles.length;
+}
+
+//Countdown starten
+function startCountdown() {
+    countdownTime = configFile.countdownTime;
+    setInterval(countdown, 1000);
+}
+
+//Bei Inaktivitaet Countdown runterzaehlen und Shutdown ausfuehren
+function countdown() {
+
+    //Wenn der Countdown noch nicht abgelaufen ist, um 1 runterzaehln
+    if (countdownTime >= 0) {
+        console.log(countdownTime + " seconds");
+        countdownTime--;
+    }
+
+    //Countdown ist abgelaufen, Shutdown durchfuehren
+    else {
+        shutdown();
+    }
+}
+
+//Countdown wieder auf Startwert setzen
+function resetCountdown() {
+    countdownTime = configFile.countdownTime;
+}
+
+//Pi herunterfahren
+function shutdown() {
+    console.log("shutdown");
+
+    //Shutdown-Sound
+    playSound("shutdown", true);
+
+    //Pi herunterfahren
+    execSync("sleep 5 && shutdown -h now");
 }

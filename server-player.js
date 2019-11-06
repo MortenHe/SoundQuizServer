@@ -1,39 +1,41 @@
 //WebSocketServer anlegen und starten
 console.log("create websocket server");
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: 8080, clientTracking: true });
+const port = 7070;
+const wss = new WebSocket.Server({ port: port, clientTracking: true });
+const { spawn } = require('child_process');
+
+//USB RFID-Reader starten
+console.log("Use USB RFID Reader");
+const rfid_usb = spawn("node", [__dirname + "/../WSRFID/rfid.js", port]);
+rfid_usb.stdout.on('data', (data) => {
+    console.log("rfid event: " + data);
+});
 
 //Mplayer + Wrapper anlegen
 const createPlayer = require('mplayer-wrapper');
 const player = createPlayer();
 
-//Farbiges Logging
+//Utils
 const colors = require('colors');
-
-//Befehle auf Kommandzeile ausfuehren
+const fs = require('fs-extra');
 const { execSync } = require('child_process');
-
-//Array random
 const shuffle = require('shuffle-array')
 
+//Config laden
+const configFile = fs.readJsonSync(__dirname + '/config.json');
+console.log("using sound dir " + configFile.audioDir.green);
+
 //Lautstaerke zu Beginn auf 100% setzen
-let initialVolumeCommand = "sudo amixer sset PCM 100% -M";
+const initialVolumeCommand = "sudo amixer sset " + configFile["audioOutput"] + " 100% -M";
 console.log(initialVolumeCommand)
 execSync(initialVolumeCommand);
 
-//Game-Config-JSON-Objekt aus Datei holen, um daraus passende Datenstruktur zu bauen
-const fs = require('fs-extra');
-console.log("read game config".green);
-
-//Wo wird das Skript betrieben win vs. pi
-const runMode = process.argv[2] ? process.argv[2] : "pi";
-
-//Verzeichnis wo die Fragenfiles liegen
-const soundDir = runMode === "win" ? "C:/Apache24/htdocs/SoundQuizServer/sounds" : "/media/soundquiz";
-console.log("using sound dir " + soundDir.green);
+//Countdown starten
+startCountdown();
 
 //Liste der Jingles laden
-var jingles = fs.readdirSync(soundDir + "/jingles");
+var jingles = fs.readdirSync(configFile.audioDir + "/jingles");
 console.log("available jingles: " + JSON.stringify(jingles).green);
 
 //Jingles random
@@ -53,52 +55,43 @@ wss.on('connection', function connection(ws) {
     //Wenn WSS eine Nachricht von WS empfaengt
     ws.on('message', function incoming(message) {
 
+        //Countdown zuruecksetzen
+        resetCountdown();
+
         //Nachricht kommt als String -> in JSON Objekt konvertieren
         var obj = JSON.parse(message);
 
         //Werte auslesen
+        let type = obj.type;
         let value = obj.value;
 
-        //Kartenwerte auslesen
-        let cardData = JSON.parse(value);
-        let cardDataType = cardData.type;
-        let cardDataValue = cardData.value;
-
         //Welcher Typ von Karte ist es (game-select, answer, shutdown)
-        switch (cardDataType) {
+        switch (type) {
 
-            //Spiel beenden
-            case "shutdown":
-                console.log("user send stop game and shutdown event".green);
+            //Infos kommen per RFID-Karte oder Button
+            case "send-card-data":
 
-                //Verabschiedungssound
-                playSound("shutdown", true);
+                //Kartenwerte auslesen
+                let cardDataType = value.type;
+                let cardDataValue = value.value;
+                console.log("user sends " + cardDataType + " event".green);
+                switch (cardDataType) {
 
-                //Pi herunterfahren
-                execSync("sleep 5 && shutdown -h now");
-                break;
+                    //Server herunterfahren
+                    case "shutdown":
+                        shutdown();
+                        break;
 
-            //Einen Kartensound abspielen
-            case "answer":
-                console.log("user sends ANSWER event".green);
+                    //Einen Kartensound abspielen, //Sound abspielen (nur Wert "dog" steht zur Verfuegung, Pfad people vs. sounds muss ermittelt werden)
+                    case "answer":
+                        playSound(cardDataValue, true);
+                        break;
 
-                //Sound abspielen (nur Wert "dog" steht zur Verfuegung, Pfad people vs. sounds muss ermittelt werden)
-                playSound(cardDataValue, true);
-                break;
-
-            //Bei Joker ein Jingle abspielen
-            case "joker":
-                console.log("user sends JOKER event".green);
-
-                //Jingle-Sound ermitteln
-                let jingleSound = jingles[jingleCounter];
-                console.log("play jingle " + jingleSound);
-
-                //Jingle-Sound abspielen
-                playSound(soundDir + "/jingles/" + jingleSound);
-
-                //zum naechsten Jingle-Sound gehen
-                jingleCounter = (jingleCounter + 1) % jingles.length;
+                    //Jingle abspielen
+                    case "jingle":
+                        playJingle();
+                        break;
+                }
                 break;
         }
     });
@@ -114,21 +107,69 @@ function playSound(path, detectPath = false) {
         for (game of games) {
 
             //potentiellen Pfad erstellen
-            let testPath = soundDir + "/" + game + "/" + path + "-question.mp3";
+            let testPath = configFile.audioDir + "/" + game + "/" + path + "-question.mp3";
             console.log("check if exists: " + testPath);
 
-            //Wenn diese Datei existiert
+            //Wenn diese Datei existiert, Pfad merken und Iteration abbrechen
             if (fs.existsSync(testPath)) {
-
-                //Pfad merken
                 path = testPath;
-
-                //Iteration abbrechen
                 break;
             }
         }
     }
 
-    //Sound soll direkt wiedergegeben werden
+    //Sound abspielen
+    console.log("play sound " + path);
     player.play(path);
+}
+
+//Countdown starten
+function startCountdown() {
+    countdownTime = configFile.countdownTime;
+    setInterval(countdown, 1000);
+}
+
+//Bei Inaktivitaet Countdown runterzaehlen und Shutdown ausfuehren
+function countdown() {
+
+    //Wenn der Countdown noch nicht abgelaufen ist, um 1 runterzaehln
+    if (countdownTime >= 0) {
+        console.log(countdownTime + " seconds");
+        countdownTime--;
+    }
+
+    //Countdown ist abgelaufen, Shutdown durchfuehren
+    else {
+        shutdown();
+    }
+}
+
+//Countdown wieder auf Startwert setzen
+function resetCountdown() {
+    countdownTime = configFile.countdownTime;
+}
+
+//Pi herunterfahren
+function shutdown() {
+    console.log("shutdown");
+
+    //Shutdown-Sound
+    playSound("shutdown", true);
+
+    //Pi herunterfahren
+    execSync("sleep 5 && shutdown -h now");
+}
+
+//Jingle abspielen
+function playJingle() {
+
+    //Jingle-Sound ermitteln
+    let jingleSound = jingles[jingleCounter];
+    console.log("play jingle " + jingleSound);
+
+    //Jingle-Sound abspielen
+    playSound(configFile.audioDir + "/jingles/" + jingleSound);
+
+    //zum naechsten Jingle-Sound gehen
+    jingleCounter = (jingleCounter + 1) % jingles.length;
 }
