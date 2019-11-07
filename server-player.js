@@ -5,6 +5,13 @@ const port = 7070;
 const wss = new WebSocket.Server({ port: port, clientTracking: true });
 const { spawn } = require('child_process');
 
+//GPIO Buttons starten
+console.log("Use GPIO Buttons");
+const buttons_gpio = spawn("node", [__dirname + "/../WSGpioButtons/button.js", port]);
+buttons_gpio.stdout.on("data", (data) => {
+    console.log("button event: " + data);
+});
+
 //USB RFID-Reader starten
 console.log("Use USB RFID Reader");
 const rfid_usb = spawn("node", [__dirname + "/../WSRFID/rfid.js", port]);
@@ -19,6 +26,7 @@ const player = createPlayer();
 //Utils
 const colors = require('colors');
 const fs = require('fs-extra');
+const glob = require('glob');
 const { execSync } = require('child_process');
 const shuffle = require('shuffle-array')
 
@@ -30,6 +38,11 @@ console.log("using sound dir " + configFile.audioDir.green);
 const initialVolumeCommand = "sudo amixer sset " + configFile["audioOutput"] + " 100% -M";
 console.log(initialVolumeCommand)
 execSync(initialVolumeCommand);
+
+//Liste der Audio files (ohne Jingles) fuer random
+const audioFiles = glob.sync(configFile.audioDir + "/*/*.mp3", {
+    ignore: ["**/jingles/*.mp3"]
+});
 
 //Countdown starten
 startCountdown();
@@ -88,8 +101,13 @@ wss.on('connection', function connection(ws) {
                         break;
 
                     //Jingle abspielen
-                    case "jingle":
+                    case "jingle": case "repeat":
                         playJingle();
+                        break;
+
+                    //Joker -> random sound
+                    case "joker":
+                        playRandomSound();
                         break;
                 }
                 break;
@@ -121,6 +139,13 @@ function playSound(path, detectPath = false) {
     //Sound abspielen
     console.log("play sound " + path);
     player.play(path);
+}
+
+//Zufaelligen Sound ermitteln und abspielen
+function playRandomSound() {
+    const randomFile = audioFiles[Math.floor(Math.random() * audioFiles.length)];
+    console.log("play random sound " + randomFile);
+    player.play(randomFile);
 }
 
 //Countdown starten
