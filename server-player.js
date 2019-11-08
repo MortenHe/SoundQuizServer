@@ -61,6 +61,9 @@ var jingleCounter = 0;
 //Liste der Spiele
 const games = ["people", "sounds"];
 
+//Zu Beginn einen zufaelligen Sound abspielen
+playRandomSound();
+
 //Wenn sich ein WebSocket mit dem WebSocketServer verbindet
 wss.on('connection', function connection(ws) {
     console.log("new client connected");
