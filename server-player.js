@@ -124,19 +124,8 @@ function playSound(path, detectPath = false) {
     //Wenn Pfad ermittelt werden muss
     if (detectPath) {
 
-        //Ueber Liste der Spiele gehen
-        for (game of games) {
-
-            //potentiellen Pfad erstellen
-            let testPath = configFile.audioDir + "/" + game + "/" + path + "-question.mp3";
-            console.log("check if exists: " + testPath);
-
-            //Wenn diese Datei existiert, Pfad merken und Iteration abbrechen
-            if (fs.existsSync(testPath)) {
-                path = testPath;
-                break;
-            }
-        }
+        //Find question file
+        path = glob.sync(configFile.audioDir + "/*/" + path + "-question.mp3")[0];
     }
 
     //Sound abspielen
