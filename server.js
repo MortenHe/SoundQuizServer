@@ -38,7 +38,7 @@ const configFile = fs.readJsonSync(__dirname + '/config.json');
 console.log("using sound dir " + configFile.audioDir.green);
 
 //Lautstaerke zu Beginn auf 100% setzen
-const initialVolumeCommand = "sudo amixer sset " + configFile["audioOutput"] + " 30% -M";
+const initialVolumeCommand = "sudo amixer sset " + configFile["audioOutput"] + " 80% -M";
 console.log(initialVolumeCommand)
 execSync(initialVolumeCommand);
 
