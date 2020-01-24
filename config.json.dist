@@ -1,5 +1,6 @@
 {
     "audioDir": "/media/usb_audio/soundquiz",
     "audioOutput": "Digital",
+    "volume": 80,
     "countdownTime": 300
 }
