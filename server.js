@@ -73,8 +73,8 @@ for (let card in gameConfigJSON) {
     //Karteninfo laden
     let cardInfo = gameConfigJSON[card];
 
-    //Wenn es eine Antwortkarte ist
-    if (cardInfo["type"] === "answer") {
+    //Wenn es eine aktive Antwortkarte ist
+    if (cardInfo["type"] === "answer" && cardInfo["active"]) {
 
         //Ueber die Spiele gehen, denen diese Karte zugeordnet ist
         for (let game of cardInfo["games"]) {
