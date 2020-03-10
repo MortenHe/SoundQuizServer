@@ -34,10 +34,15 @@ const shuffle = require('shuffle-array')
 const configFile = fs.readJsonSync(__dirname + '/config.json');
 console.log("using sound dir " + configFile.audioDir.green);
 
-//Lautstaerke zu Beginn auf 100% setzen
-const initialVolumeCommand = "sudo amixer sset " + configFile["audioOutput"] + " " + + configFile.volume + "% -M";
-console.log(initialVolumeCommand)
-execSync(initialVolumeCommand);
+//Lautstaerke zu Beginn auf x% setzen
+if (configFile["audioOutput"]) {
+    const initialVolumeCommand = "sudo amixer sset " + configFile["audioOutput"] + " " + + configFile.volume + "% -M";
+    console.log(initialVolumeCommand)
+    execSync(initialVolumeCommand);
+}
+else {
+    console.log("no audioOutput configured");
+}
 
 //Liste der Audio files (ohne Jingles) fuer random
 const audioFiles = glob.sync(configFile.audioDir + "/*/*.mp3", {
@@ -57,9 +62,6 @@ console.log("jingle order: " + JSON.stringify(jingles).green);
 
 //Schritt fuer Schritt durch das Jingle-Array gehen
 var jingleCounter = 0;
-
-//Liste der Spiele
-const games = ["people", "sounds"];
 
 //Zu Beginn einen zufaelligen Sound abspielen
 playRandomSound();
@@ -123,8 +125,6 @@ function playSound(path, detectPath = false) {
 
     //Wenn Pfad ermittelt werden muss
     if (detectPath) {
-
-        //Find question file
         path = glob.sync(configFile.audioDir + "/*/" + path + "-question.mp3")[0];
     }
 

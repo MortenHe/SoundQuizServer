@@ -37,10 +37,15 @@ const shuffle = require('shuffle-array');
 const configFile = fs.readJsonSync(__dirname + '/config.json');
 console.log("using sound dir " + configFile.audioDir.green);
 
-//Lautstaerke zu Beginn auf 100% setzen
-const initialVolumeCommand = "sudo amixer sset " + configFile["audioOutput"] + " " + + configFile.volume + "% -M";
-console.log(initialVolumeCommand)
-execSync(initialVolumeCommand);
+//Lautstaerke zu Beginn auf x% setzen
+if (configFile["audioOutput"]) {
+    const initialVolumeCommand = "sudo amixer sset " + configFile["audioOutput"] + " " + + configFile.volume + "% -M";
+    console.log(initialVolumeCommand)
+    execSync(initialVolumeCommand);
+}
+else {
+    console.log("no audioOutput configured");
+}
 
 //Countdown starten
 startCountdown();
