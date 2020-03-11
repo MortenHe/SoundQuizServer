@@ -64,7 +64,7 @@ console.log("jingle order: " + JSON.stringify(jingles).green);
 var jingleCounter = 0;
 
 //Zu Beginn einen zufaelligen Sound abspielen
-playRandomSound();
+playSound(configFile.audioDir + "/server-player-start.mp3");
 
 //Wenn sich ein WebSocket mit dem WebSocketServer verbindet
 wss.on('connection', function connection(ws) {
@@ -171,7 +171,7 @@ function shutdown() {
     console.log("shutdown");
 
     //Shutdown-Sound
-    playSound("shutdown", true);
+    playSound(configFile.audioDir + "/shutdown.mp3");
 
     //Pi herunterfahren
     execSync("sleep 5 && shutdown -h now");
