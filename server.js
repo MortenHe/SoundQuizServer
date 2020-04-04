@@ -84,15 +84,25 @@ for (let card in gameConfigJSON) {
         //Ueber die Spiele gehen, denen diese Karte zugeordnet ist
         for (let game of cardInfo["games"]) {
 
-            //Wenn es bei diesem Spiel noch keine Eintraege gibt ein Array anlagen, ansonsten weiteren Wert hinzufuegen
-            !gameConfig[game] ? gameConfig[game] = [cardInfo["value"]] : gameConfig[game].push(cardInfo["value"])
+            //Wenn es bei diesem Spiel noch keine Eintraege gibt, ein Array anlagen
+            if (!gameConfig[game]) {
+                gameConfig[game] = [];
+            }
+
+            //Wenn es ein Array von Werte ist, alle einzelnen Werte speichern
+            if (Array.isArray(cardInfo["value"])) {
+                for (singleValue of cardInfo["value"]) {
+                    gameConfig[game].push(singleValue);
+                }
+            }
+
+            //Es ist ein Einzelwert -> diesen merken
+            else {
+                gameConfig[game].push(cardInfo["value"]);
+            }
         }
     }
 }
-gameConfig["numbers"] = [];
-gameConfig["numbers"].push("1+3");
-gameConfig["numbers"].push("2+2");
-gameConfig["numbers"].push("3+1");
 console.log("available games and questions: " + JSON.stringify(gameConfig).green);
 
 //Liste der Jingles laden
@@ -205,7 +215,7 @@ wss.on('connection', function connection(ws) {
                                 //die Antwort als Array den korrekten Wert enthaelt oder
                                 //der Joker gespielt wurde
                                 if ((typeof (cardDataValue) === "string" && cardDataValue === currentQuestion) ||
-                                    (Array.isArray(cardDataValue) === "string" && cardDataValue.includes(currentQuestion)) ||
+                                    (Array.isArray(cardDataValue) && cardDataValue.includes(currentQuestion)) ||
                                     cardDataType === "joker") {
                                     console.log("correct answer".green);
 
