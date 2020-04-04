@@ -89,6 +89,10 @@ for (let card in gameConfigJSON) {
         }
     }
 }
+gameConfig["numbers"] = [];
+gameConfig["numbers"].push("1+3");
+gameConfig["numbers"].push("2+2");
+gameConfig["numbers"].push("3+1");
 console.log("available games and questions: " + JSON.stringify(gameConfig).green);
 
 //Liste der Jingles laden
@@ -197,8 +201,12 @@ wss.on('connection', function connection(ws) {
                             //Es laeuft schon ein Spiel
                             else {
 
-                                //Wenn die Antwort korrekt ist oder der Joker gespielt wurde
-                                if (cardDataValue === currentQuestion || cardDataType === "joker") {
+                                //Wenn die Antwort als Einzelwert (String) korrekt ist oder
+                                //die Antwort als Array den korrekten Wert enthaelt oder
+                                //der Joker gespielt wurde
+                                if ((typeof (cardDataValue) === "string" && cardDataValue === currentQuestion) ||
+                                    (Array.isArray(cardDataValue) === "string" && cardDataValue.includes(currentQuestion)) ||
+                                    cardDataType === "joker") {
                                     console.log("correct answer".green);
 
                                     //Anzahl der richtigen Antworten erhoehen
