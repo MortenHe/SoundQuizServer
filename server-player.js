@@ -101,10 +101,22 @@ wss.on('connection', function connection(ws) {
                         break;
 
                     //Einen Kartensound abspielen, //Sound abspielen (nur Wert "dog" steht zur Verfuegung, Pfad people vs. sounds muss ermittelt werden)
-                    //Wenn ein Value-Array geliefert wird (z.B. bei Numbers "1+3", "2+2", "3+1") den 1. Wert nehmen zum Vorlegen -> "1+3-name.mp3"
                     case "answer":
-                        const soundFile = Array.isArray(cardDataValue) ? cardDataValue[0] : cardDataValue;
-                        playSound(soundFile, true, "name");
+                        let soundFile;
+                        let suffix;
+
+                        //Bei Antwortarray (z.B. Numbers) -> ersten Array-Wert nehmen und Antwort vorlesen
+                        if (Array.isArray(cardDataValue)) {
+                            soundFile = cardDataValue[0];
+                            suffix = "name";
+                        }
+
+                        //Einzelantwort (z.B. people) -> diesen Wert zum Abspielen nehmen und Frage vorlesen
+                        else {
+                            soundFile = cardDataValue;
+                            suffix = "question";
+                        }
+                        playSound(soundFile, true, suffix);
                         break;
 
                     //Jingle abspielen
