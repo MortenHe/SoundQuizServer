@@ -104,7 +104,7 @@ wss.on('connection', function connection(ws) {
                     //Wenn ein Value-Array geliefert wird (z.B. bei Numbers "1+3", "2+2", "3+1") den 1. Wert nehmen zum Vorlegen -> "1+3-name.mp3"
                     case "answer":
                         const soundFile = Array.isArray(cardDataValue) ? cardDataValue[0] : cardDataValue;
-                        playSound(soundFile, true);
+                        playSound(soundFile, true, "name");
                         break;
 
                     //Jingle abspielen
@@ -123,11 +123,11 @@ wss.on('connection', function connection(ws) {
 });
 
 //Sound abspielen
-function playSound(path, detectPath = false) {
+function playSound(path, detectPath = false, suffix = "question") {
 
     //Wenn Pfad ermittelt werden muss
     if (detectPath) {
-        path = glob.sync(configFile.audioDir + "/*/" + path + "-question.mp3")[0];
+        path = glob.sync(configFile.audioDir + "/*/" + path + "-" + suffix + ".mp3")[0];
     }
 
     //Sound abspielen
