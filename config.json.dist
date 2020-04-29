@@ -1,5 +1,5 @@
 {
-    "audioDir": "/media/usb_audio/soundquiz",
+    "audioDir": "/media/usb_audio/Nextcloud/audio/soundquiz",
     "audioOutput": "Digital",
     "volume": 80,
     "countdownTime": 300

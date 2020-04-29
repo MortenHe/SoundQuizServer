@@ -67,7 +67,7 @@ player.on('track-change', () => {
 
 //Game-Config-JSON-Objekt aus Datei holen, um daraus passende Datenstruktur zu bauen
 console.log("read game config".green);
-const gameConfigJSON = fs.readJsonSync(__dirname + '/../WSRFID/config_cards_7070.json');
+const gameConfigJSON = fs.readJsonSync(configFile["audioDir"] + "/soundquiz_rfid.json");
 
 //Datenstruktur fuer Server (zufaellige Fragen laden)
 var gameConfig = {};
