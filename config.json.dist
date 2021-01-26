@@ -1,6 +1,6 @@
 {
     "audioDir": "/media/usb_audio/Nextcloud/audio/soundquiz",
-    "audioOutput": "Digital",
+    "audioOutput": "Speaker|Master|Digital|PCM",
     "volume": 80,
     "countdownTime": 300
 }
