@@ -27,7 +27,7 @@ const player = createPlayer();
 const colors = require('colors');
 const fs = require('fs-extra');
 const glob = require('glob');
-const { execSync } = require('child_process');
+const exec = require('child_process').exec;
 const shuffle = require('shuffle-array')
 
 //Config laden
@@ -38,7 +38,7 @@ console.log("using sound dir " + configFile.audioDir.green);
 if (configFile["audioOutput"]) {
     const initialVolumeCommand = "sudo amixer sset " + configFile["audioOutput"] + " " + + configFile.volume + "% -M";
     console.log(initialVolumeCommand)
-    execSync(initialVolumeCommand);
+    exec(initialVolumeCommand);
 }
 else {
     console.log("no audioOutput configured");
@@ -188,7 +188,7 @@ function shutdown() {
     playSound(configFile.audioDir + "/shutdown.mp3");
 
     //Pi herunterfahren
-    execSync("sleep 5 && shutdown -h now");
+    exec("sleep 5 && shutdown -h now");
 }
 
 //Jingle abspielen
