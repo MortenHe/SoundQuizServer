@@ -31,12 +31,13 @@ const exec = require('child_process').exec;
 const shuffle = require('shuffle-array')
 
 //Config laden
-const configFile = fs.readJsonSync(__dirname + '/config.json');
-console.log("using sound dir " + configFile.audioDir.green);
+const configFile = fs.readJsonSync(__dirname + '/../AudioServer/config.json');
+const soundquizDir = configFile.audioDir + "/soundquiz";
+console.log("using sound dir " + soundquizDir.green);
 
 //Lautstaerke zu Beginn auf x% setzen
-if (configFile["audioOutput"]) {
-    const initialVolumeCommand = "sudo amixer sset " + configFile["audioOutput"] + " " + + configFile.volume + "% -M";
+if (configFile.audioOutput) {
+    const initialVolumeCommand = "sudo amixer sset " + configFile.audioOutput + " " + + configFile.volume + "% -M";
     console.log(initialVolumeCommand)
     exec(initialVolumeCommand);
 }
@@ -45,7 +46,7 @@ else {
 }
 
 //Liste der Audio files (ohne Jingles) fuer random
-const audioFiles = glob.sync(configFile.audioDir + "/*/*.mp3", {
+const audioFiles = glob.sync(soundquizDir + "/*/*.mp3", {
     ignore: ["**/jingles/*.mp3"]
 });
 
@@ -53,7 +54,7 @@ const audioFiles = glob.sync(configFile.audioDir + "/*/*.mp3", {
 startCountdown();
 
 //Liste der Jingles laden
-var jingles = fs.readdirSync(configFile.audioDir + "/jingles");
+var jingles = fs.readdirSync(soundquizDir + "/jingles");
 console.log("available jingles: " + JSON.stringify(jingles).green);
 
 //Jingles random
@@ -64,7 +65,7 @@ console.log("jingle order: " + JSON.stringify(jingles).green);
 var jingleCounter = 0;
 
 //Zu Beginn einen zufaelligen Sound abspielen
-playSound(configFile.audioDir + "/server-player-start.mp3");
+playSound(soundquizDir + "/server-player-start.mp3");
 
 //Wenn sich ein WebSocket mit dem WebSocketServer verbindet
 wss.on('connection', function connection(ws) {
@@ -139,7 +140,7 @@ function playSound(path, detectPath = false, suffix = "question") {
 
     //Wenn Pfad ermittelt werden muss
     if (detectPath) {
-        path = glob.sync(configFile.audioDir + "/*/" + path + "-" + suffix + ".mp3")[0];
+        path = glob.sync(soundquizDir + "/*/" + path + "-" + suffix + ".mp3")[0];
     }
 
     //Sound abspielen
@@ -185,7 +186,7 @@ function shutdown() {
     console.log("shutdown");
 
     //Shutdown-Sound
-    playSound(configFile.audioDir + "/shutdown.mp3");
+    playSound(soundquizDir + "/shutdown.mp3");
 
     //Pi herunterfahren
     exec("sleep 5 && shutdown -h now");
@@ -195,11 +196,11 @@ function shutdown() {
 function playJingle() {
 
     //Jingle-Sound ermitteln
-    let jingleSound = jingles[jingleCounter];
+    const jingleSound = jingles[jingleCounter];
     console.log("play jingle " + jingleSound);
 
     //Jingle-Sound abspielen
-    playSound(configFile.audioDir + "/jingles/" + jingleSound);
+    playSound(soundquizDir + "/jingles/" + jingleSound);
 
     //zum naechsten Jingle-Sound gehen
     jingleCounter = (jingleCounter + 1) % jingles.length;

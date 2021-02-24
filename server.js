@@ -34,12 +34,13 @@ const exec = require('child_process').exec;
 const shuffle = require('shuffle-array');
 
 //Config laden
-const configFile = fs.readJsonSync(__dirname + '/config.json');
-console.log("using sound dir " + configFile.audioDir.green);
+const configFile = fs.readJsonSync(__dirname + '/../AudioServer/config.json');
+const soundquizDir = configFile.audioDir + "/soundquiz";
+console.log("using sound dir " + soundquizDir.green);
 
 //Lautstaerke zu Beginn auf x% setzen
-if (configFile["audioOutput"]) {
-    const initialVolumeCommand = "sudo amixer sset " + configFile["audioOutput"] + " " + + configFile.volume + "% -M";
+if (configFile.audioOutput) {
+    const initialVolumeCommand = "sudo amixer sset " + configFile.audioOutput + " " + + configFile.volume + "% -M";
     console.log(initialVolumeCommand)
     exec(initialVolumeCommand);
 }
@@ -67,7 +68,7 @@ player.on('track-change', () => {
 
 //Game-Config-JSON-Objekt aus Datei holen, um daraus passende Datenstruktur zu bauen
 console.log("read game config".green);
-const gameConfigJSON = fs.readJsonSync(configFile["audioDir"] + "/soundquiz_rfid.json");
+const gameConfigJSON = fs.readJsonSync(soundquizDir + "/soundquiz_rfid.json");
 
 //Datenstruktur fuer Server (zufaellige Fragen laden)
 var gameConfig = {};
@@ -106,7 +107,7 @@ for (let card in gameConfigJSON) {
 console.log("available games and questions: " + JSON.stringify(gameConfig).green);
 
 //Liste der Jingles laden
-var jingles = fs.readdirSync(configFile.audioDir + "/jingles");
+var jingles = fs.readdirSync(soundquizDir + "/jingles");
 console.log("available jingles: " + JSON.stringify(jingles).green);
 
 //Jingles random
@@ -322,7 +323,7 @@ function sendClientInfo(messageObjArr) {
 function playSound(path, interrupt = false) {
 
     //Pfad zu Datei
-    let filePath = configFile.audioDir + "/" + path + ".mp3";
+    const filePath = soundquizDir + "/" + path + ".mp3";
 
     //Wenn Sound eingereiht werden soll
     if (!interrupt) {

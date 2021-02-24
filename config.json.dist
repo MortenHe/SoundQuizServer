@@ -1,6 +1,0 @@
-{
-    "audioDir": "/home/pi/Nextcloud/audio/soundquiz",
-    "audioOutput": "Speaker|Master|Digital|PCM",
-    "volume": 80,
-    "countdownTime": 300
-}
